@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Donut ALR | Cupcakes Artesanais ✨</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            /* NOVAS CORES PASTEL 🎨 */
+            --cream: #FFF5F0;        /* fundo principal - rosa clarinho */
+            --peach: #FFD9E8;        /* rosa bebê pastel */
+            --coral: #F5A3C7;        /* rosa pastel principal */
+            --rose: #FFB7D5;         /* rosa claro */
+            --plum: #C9A9C6;         /* lavanda pastel */
+            --sugar: #FFF0F5;        /* fundo doce - lavanda clarinha */
+            --dark: #E8D5C4;         /* bege rosado para textos escuros */
+            --mid: #D4B8A8;          /* marrom clarinho */
+            --light-mid: #E5CDBB;    /* bege suave */
+            --card-bg: #FFF9FB;      /* fundo do card - quase branco rosado */
+            --shadow: 0 8px 32px rgba(245,163,199,0.2);
+            --mint: #A8E6CF;         /* menta pastel para destaques */
+            --mint-dark: #89CBB2;    /* menta mais escuro */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            color: #5C3D2E;  /* marrom suave para texto principal */
+            overflow-x: hidden;
+        }
+
+        /* ─── NOISE TEXTURE OVERLAY ─── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.02;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--sugar); }
+        ::-webkit-scrollbar-thumb { background: var(--peach); border-radius: 99px; }
+
+        /* ─── HEADER ─── */
+        .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 900;
+            background: rgba(255,245,240,0.92);
+            backdrop-filter: blur(16px);
+            border-bottom: 1.5px solid rgba(245,163,199,0.2);
+        }
+
+        .navbar {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+        }
+
+        .logo-img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2.5px solid var(--peach);
+            transition: transform 0.35s cubic-bezier(.34,1.56,.64,1);
+        }
+        .logo-img:hover { transform: rotate(-8deg) scale(1.08); }
+
+        .logo-text {
+            font-family: 'Pacifico', cursive;
+            font-size: 1.45rem;
+            color: var(--coral);
+            letter-spacing: -0.3px;
+            line-height: 1;
+        }
+        .logo-text em {
+            display: block;
+            font-style: normal;
+            font-size: 0.65rem;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 500;
+            letter-spacing: 0.18em;
+            color: var(--plum);
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 0.2rem;
+            list-style: none;
+        }
+        .nav-links a {
+            text-decoration: none;
+            font-weight: 500;
+            color: #8B6B5A;
+            font-size: 0.95rem;
+            padding: 0.4rem 1rem;
+            border-radius: 99px;
+            transition: all 0.18s;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            background: var(--sugar);
+            color: var(--coral);
+        }
+
+        .cart-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--coral);
+            color: white;
+            border: none;
+            padding: 0.55rem 1.3rem;
+            border-radius: 99px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'DM Sans', sans-serif;
+            position: relative;
+        }
+        .cart-btn:hover { background: var(--rose); transform: scale(0.97); }
+        .cart-badge {
+            background: white;
+            color: var(--coral);
+            border-radius: 50%;
+            width: 20px; height: 20px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ─── HERO ─── */
+        .hero {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 4rem 2rem 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-family: 'Pacifico', cursive;
+            font-size: clamp(2.4rem, 5vw, 3.8rem);
+            line-height: 1.15;
+            color: #5C3D2E;
+            margin-bottom: 1.2rem;
+        }
+        .hero-text h1 span { color: var(--coral); }
+
+        .hero-text p {
+            color: #8B6B5A;
+            font-size: 1.1rem;
+            line-height: 1.7;
+            max-width: 420px;
+            margin-bottom: 2rem;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: var(--coral);
+            color: white;
+            border: none;
+            padding: 0.85rem 2rem;
+            border-radius: 99px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary:hover { background: var(--rose); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(245,163,199,0.4); }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--coral);
+            border: 2px solid var(--peach);
+            padding: 0.82rem 1.8rem;
+            border-radius: 99px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn-outline:hover { border-color: var(--coral); background: var(--sugar); }
+
+        .hero-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hero-donut-ring {
+            width: 340px;
+            height: 340px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #FFF0F5, var(--peach));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9rem;
+            position: relative;
+            box-shadow: 0 30px 60px rgba(245,163,199,0.25), inset 0 -10px 20px rgba(0,0,0,0.04);
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-14px); }
+        }
+
+        .hero-donut-ring::after {
+            content: '';
+            position: absolute;
+            inset: -16px;
+            border-radius: 50%;
+            border: 2px dashed var(--peach);
+            opacity: 0.5;
+            animation: spin 18s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .floating-pills {
+            position: absolute;
+        }
+        .pill {
+            position: absolute;
+            background: white;
+            border-radius: 99px;
+            padding: 6px 14px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #8B6B5A;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            white-space: nowrap;
+        }
+        .pill-1 { top: -20px; right: -60px; animation: float 3.5s 0.5s ease-in-out infinite; }
+        .pill-2 { bottom: 30px; left: -80px; animation: float 4s 1s ease-in-out infinite; }
+        .pill-3 { top: 80px; left: -100px; animation: float 3s 0.2s ease-in-out infinite; }
+
+        /* ─── STATS BAR ─── */
+        .stats-bar {
+            background: #C9A9C6;
+            color: white;
+            padding: 1rem 2rem;
+        }
+        .stats-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            flex-wrap: wrap;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-num {
+            font-family: 'Pacifico', cursive;
+            font-size: 1.5rem;
+            color: #FFD9E8;
+        }
+        .stat-label {
+            font-size: 0.82rem;
+            opacity: 0.85;
+            margin-top: 2px;
+        }
+
+        /* ─── SECTION ─── */
+        .section {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .section-title {
+            font-family: 'Pacifico', cursive;
+            font-size: 2rem;
+            color: #5C3D2E;
+        }
+        .section-title span { color: var(--coral); }
+
+        /* ─── FILTERS ─── */
+        .filters {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            background: white;
+            border: 1.5px solid #FFD9E8;
+            padding: 0.45rem 1.1rem;
+            border-radius: 99px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            color: #8B6B5A;
+            transition: all 0.18s;
+        }
+        .filter-btn:hover { border-color: var(--coral); color: var(--coral); background: #FFF9FB; }
+        .filter-btn.active { background: var(--coral); border-color: var(--coral); color: white; }
+
+        /* ─── PRODUCTS GRID ─── */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .product-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1.5px solid rgba(245,163,199,0.15);
+            transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+            cursor: pointer;
+        }
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow);
+            border-color: var(--peach);
+        }
+
+        .product-img-wrap {
+            position: relative;
+            aspect-ratio: 1;
+            overflow: hidden;
+            background: var(--sugar);
+        }
+        .product-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            background: linear-gradient(145deg, var(--sugar), var(--peach));
+            color: white;
+            user-select: none;
+        }
+
+        .product-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+        .product-card:hover .product-img { transform: scale(1.06); }
+
+        .product-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: var(--plum);
+            color: white;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 99px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .product-fav {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: white;
+            border: none;
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .product-fav:hover { transform: scale(1.2); }
+
+        .product-info {
+            padding: 1.2rem;
+        }
+        .product-category {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--light-mid);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.3rem;
+        }
+        .product-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #5C3D2E;
+            margin-bottom: 0.8rem;
+            line-height: 1.3;
+        }
+        .product-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .product-price {
+            font-weight: 800;
+            font-size: 1.3rem;
+            color: var(--coral);
+        }
+        .product-price small {
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--light-mid);
+            display: block;
+            line-height: 1;
+        }
+
+        .btn-add-cart {
+            background: var(--coral);
+            color: white;
+            border: none;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            font-size: 1.3rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .btn-add-cart:hover { background: var(--rose); transform: rotate(90deg) scale(1.1); }
+
+        /* ─── DELIVERY ─── */
+        .delivery-section {
+            background: #C9A9C6;
+            color: white;
+            padding: 4rem 2rem;
+            margin: 2rem 0;
+        }
+
+        .delivery-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: start;
+        }
+
+        .delivery-text h2 {
+            font-family: 'Pacifico', cursive;
+            font-size: 2.2rem;
+            color: #FFD9E8;
+            margin-bottom: 1rem;
+        }
+        .delivery-text p {
+            opacity: 0.85;
+            line-height: 1.7;
+            margin-bottom: 2rem;
+        }
+
+        .delivery-info-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .info-card {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 16px;
+            padding: 1.2rem;
+        }
+        .info-card-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .info-card-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.2rem; }
+        .info-card-sub { font-size: 0.8rem; opacity: 0.8; }
+
+        .calc-box {
+            background: white;
+            border-radius: 24px;
+            padding: 2rem;
+            color: #5C3D2E;
+        }
+        .calc-box h3 {
+            font-family: 'Pacifico', cursive;
+            font-size: 1.3rem;
+            color: var(--coral);
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #8B6B5A;
+            margin-bottom: 0.4rem;
+        }
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid #FFD9E8;
+            border-radius: 12px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            color: #5C3D2E;
+            background: var(--cream);
+            transition: border-color 0.2s;
+            outline: none;
+        }
+        .form-control:focus { border-color: var(--coral); }
+
+        .btn-calc {
+            width: 100%;
+            background: var(--coral);
+            color: white;
+            border: none;
+            padding: 0.85rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.2s;
+            margin-top: 0.5rem;
+        }
+        .btn-calc:hover { background: var(--rose); }
+
+        .frete-result {
+            margin-top: 1rem;
+            background: var(--sugar);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 700;
+            color: var(--coral);
+            font-size: 1.1rem;
+            display: none;
+        }
+        .frete-result.show { display: block; }
+
+        /* ─── MAP ─── */
+        .map-wrap {
+            border-radius: 20px;
+            overflow: hidden;
+            height: 280px;
+            margin-top: 1.5rem;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        /* ─── CART SIDEBAR ─── */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(92,61,46,0.4);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            backdrop-filter: blur(4px);
+        }
+        .overlay.show { opacity: 1; pointer-events: all; }
+
+        .cart-sidebar {
+            position: fixed;
+            top: 0; right: 0;
+            width: 400px;
+            max-width: 95vw;
+            height: 100%;
+            background: var(--card-bg);
+            z-index: 1001;
+            transform: translateX(110%);
+            transition: transform 0.35s cubic-bezier(.34,1.16,.64,1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: -8px 0 40px rgba(0,0,0,0.1);
+        }
+        .cart-sidebar.open { transform: translateX(0); }
+
+        .cart-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #FFD9E8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .cart-header h2 {
+            font-family: 'Pacifico', cursive;
+            font-size: 1.4rem;
+            color: #5C3D2E;
+        }
+        .close-btn {
+            background: var(--sugar);
+            border: none;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .close-btn:hover { background: var(--peach); }
+
+        .cart-body { flex: 1; overflow-y: auto; padding: 1rem 1.5rem; }
+
+        .cart-empty {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--light-mid);
+        }
+        .cart-empty-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+
+        .cart-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.9rem 0;
+            border-bottom: 1px solid #FFF0F5;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .cart-item-img {
+            width: 56px; height: 56px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: var(--sugar);
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .cart-item-info { flex: 1; }
+        .cart-item-name { font-weight: 600; font-size: 0.9rem; color: #5C3D2E; }
+        .cart-item-price { font-size: 0.85rem; color: var(--coral); font-weight: 700; }
+        .cart-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .qty-btn {
+            background: var(--sugar);
+            border: none;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .qty-btn:hover { background: var(--peach); }
+        .qty-num { font-weight: 700; font-size: 0.95rem; min-width: 20px; text-align: center; }
+
+        .cart-footer { padding: 1.5rem; border-top: 1px solid #FFD9E8; }
+        .cart-summary { margin-bottom: 1rem; }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #8B6B5A;
+            margin-bottom: 0.4rem;
+        }
+        .summary-row.total {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #5C3D2E;
+            border-top: 1px solid #FFD9E8;
+            padding-top: 0.7rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn-checkout {
+            width: 100%;
+            background: linear-gradient(135deg, var(--coral), var(--rose));
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.2s;
+        }
+        .btn-checkout:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,163,199,0.4); }
+
+        /* ─── TOAST ─── */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #5C3D2E;
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border-radius: 99px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+            white-space: nowrap;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ─── FOOTER ─── */
+        footer {
+            background: #C9A9C6;
+            color: white;
+            text-align: center;
+            padding: 2.5rem 2rem;
+        }
+        footer .footer-logo {
+            font-family: 'Pacifico', cursive;
+            font-size: 1.6rem;
+            color: #FFD9E8;
+            margin-bottom: 0.5rem;
+        }
+        footer p {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 900px) {
+            .hero { grid-template-columns: 1fr; text-align: center; }
+            .hero-text p { margin: 0 auto 2rem; }
+            .hero-cta { justify-content: center; }
+            .hero-visual { display: none; }
+            .delivery-inner { grid-template-columns: 1fr; gap: 2rem; }
+            .nav-links { display: none; }
+            .stats-inner { gap: 2rem; }
+        }
+
+        @media (max-width: 600px) {
+            .products-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+            .delivery-info-cards { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+    <nav class="navbar">
+        <a href="#" class="logo-area">
+            <img
+                src="logo.jpeg"
+                alt="Logo" class="logo-img" id="siteLogo">
+            <div class="logo-text">
+                Doceria ALR
+                <em>CupCakes · Floriano</em>
+            </div>
+        </a>
+        <ul class="nav-links">
+            <li><a href="#cardapio" class="active" data-cat="all">Cardápio</a></li>
+            <li><a href="#cardapio" data-cat="donuts">Donuts</a></li>
+            <li><a href="#cardapio" data-cat="cupcakes">Cupcakes</a></li>
+            <li><a href="#cardapio" data-cat="especiais">Especiais</a></li>
+            <li><a href="#delivery">Delivery</a></li>
+        </ul>
+        <button class="cart-btn" id="cartBtn">
+            🛒
+            <span class="cart-badge" id="cartCount">0</span>
+        </button>
+    </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-text">
+        <h1>Doces feitos<br>com <span>amor</span> ✨</h1>
+        <p>Donuts artesanais, cupcakes decorados e muito açúcar — entregues com carinho em Floriano e Barão de Grajaú.</p>
+        <div class="hero-cta">
+            <a href="#cardapio" class="btn-primary">🍩 Ver cardápio</a>
+            <a href="#delivery" class="btn-outline">Calcular frete</a>
+        </div>
+    </div>
+    <div class="hero-visual">
+        <div style="position:relative">
+            <div class="hero-donut-ring">
+                <img src="logo.jpeg" style="width: 80%; height: 80%; object-fit: contain; border-radius: 50%;">
+            </div>
+            <div class="floating-pills">
+                <div class="pill pill-1">🧁 Cupcakes premium</div>
+                <div class="pill pill-2">🚚 Entrega rápida</div>
+                <div class="pill pill-3">💖 Feito com amor</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-bar">
+    <div class="stats-inner">
+        <div class="stat">
+            <div class="stat-num">200+</div>
+            <div class="stat-label">Pedidos entregues</div>
+        </div>
+        <div class="stat">
+            <div class="stat-num">8+</div>
+            <div class="stat-label">Sabores exclusivos</div>
+        </div>
+        <div class="stat">
+            <div class="stat-num">2</div>
+            <div class="stat-label">Cidades atendidas</div>
+        </div>
+        <div class="stat">
+            <div class="stat-num">⭐ 4.9</div>
+            <div class="stat-label">Avaliação média</div>
+        </div>
+    </div>
+</div>
+
+<!-- CARDÁPIO -->
+<section class="section" id="cardapio">
+    <div class="section-header">
+        <h2 class="section-title">Nosso <span>Cardápio</span></h2>
+        <div class="filters">
+            <button class="filter-btn active" data-cat="all">Tudo</button>
+            <button class="filter-btn" data-cat="donuts">🍩 Donuts</button>
+            <button class="filter-btn" data-cat="cupcakes">🧁 Cupcakes</button>
+            <button class="filter-btn" data-cat="especiais">✨ Especiais</button>
+        </div>
+    </div>
+    <div class="products-grid" id="productsGrid"></div>
+</section>
+
+<!-- DELIVERY -->
+<section class="delivery-section" id="delivery">
+    <div class="delivery-inner">
+        <div class="delivery-text">
+            <h2>Delivery com Carinho 🚛</h2>
+            <p>Entregamos de terça a domingo em Floriano e Barão de Grajaú. Nossas embalagens são especiais para seus doces chegarem perfeitos.</p>
+            <div class="delivery-info-cards">
+                <div class="info-card">
+                    <div class="info-card-icon">⏱️</div>
+                    <div class="info-card-title">Prazo</div>
+                    <div class="info-card-sub">1 a 2 dias úteis</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-icon">📦</div>
+                    <div class="info-card-title">Embalagem</div>
+                    <div class="info-card-sub">Segura e fofa</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-icon">💳</div>
+                    <div class="info-card-title">Pagamento</div>
+                    <div class="info-card-sub">Pix / cartão</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card-icon">📞</div>
+                    <div class="info-card-title">Atendimento</div>
+                    <div class="info-card-sub">Todos os dias</div>
+                </div>
+            </div>
+            <div class="map-wrap" id="fofoMap"></div>
+        </div>
+
+        <div class="calc-box">
+            <h3>Calcular Frete 🍬</h3>
+            <div class="form-group">
+                <label>Seu bairro ou endereço</label>
+                <input type="text" class="form-control" id="cepInput" placeholder="Ex: Centro, Floriano">
+            </div>
+            <div class="form-group">
+                <label>Região de entrega</label>
+                <select class="form-control" id="regiaoSelect">
+                    <optgroup label="🌸 Floriano – Zona A (R$ 7,90)">
+                        <option value="centro">Centro</option>
+                        <option value="manguinha">Manguinha</option>
+                        <option value="irapua1">Irapuã I</option>
+                        <option value="irapua2">Irapuã II</option>
+                        <option value="bosque">Bosque Santa Teresinha</option>
+                        <option value="sao_cristovao">São Cristóvão</option>
+                        <option value="curador">Curador</option>
+                        <option value="caixa_dagua">Caixa D'Água</option>
+                    </optgroup>
+                    <optgroup label="🏘️ Floriano – Zona B (R$ 9,90)">
+                        <option value="taboca">Taboca</option>
+                        <option value="ibiapaba">Ibiapaba</option>
+                        <option value="matadouro">Matadouro</option>
+                        <option value="sambaiba_velha">Sambaíba Velha</option>
+                        <option value="sambaiba_nova">Sambaíba Nova</option>
+                        <option value="planalto_sambaiba">Planalto Sambaíba</option>
+                        <option value="alto_da_cruz">Alto da Cruz</option>
+                        <option value="jua">Juá</option>
+                        <option value="riacho_fundo">Riacho Fundo</option>
+                        <option value="vila_leao">Vila Leão</option>
+                        <option value="cancela">Cancela</option>
+                        <option value="bom_lugar">Bom Lugar</option>
+                        <option value="canoas">Canoas</option>
+                        <option value="catumbi">Catumbí</option>
+                        <option value="tiberao">Tiberão</option>
+                        <option value="pau_ferrado">Pau Ferrado</option>
+                        <option value="via_azul">Via Azul</option>
+                        <option value="princesa_sul">Princesa do Sul</option>
+                        <option value="cajueiro">Cajueiro I / II</option>
+                    </optgroup>
+                    <optgroup label="🍂 Barão de Grajaú – Zona C (R$ 12,90)">
+                        <option value="barao_centro">Centro – Barão de Grajaú</option>
+                        <option value="barao_bairros">Demais bairros – Barão de Grajaú</option>
+                    </optgroup>
+                </select>
+            </div>
+            <button class="btn-calc" id="calcFreteBtn">Calcular frete</button>
+            <div class="frete-result" id="freteResult"></div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-logo">Donut ALR</div>
+    <p>Feitos com amor em Floriano · PI &nbsp;·&nbsp; Atendimento todos os dias</p>
+</footer>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay"></div>
+
+<!-- CART SIDEBAR -->
+<div class="cart-sidebar" id="cartSidebar">
+    <div class="cart-header">
+        <h2>Meu Carrinho</h2>
+        <button class="close-btn" id="closeCartBtn">✕</button>
+    </div>
+    <div class="cart-body" id="cartBody"></div>
+    <div class="cart-footer">
+        <div class="cart-summary" id="cartSummary"></div>
+        <button class="btn-checkout" id="checkoutBtn">Finalizar Pedido 🍬</button>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+    // ══════════════════════════════════════════════════════════
+    // ★ PRODUTOS — ATUALIZADOS COM IDEIAS ESPECIAIS ★
+    // ══════════════════════════════════════════════════════════
+    const produtos = [
+        // DONUTS 🍩
+        { id: 1, name: "🍩 Donut Glitter Rosa", price: 12.90, category: "donuts", img:"imagens/rosagllitter.png", badge: "❤️ Mais vendido" },
+        { id: 2, name: "🍩 Donut Chuvinha de Chocolate", price: 13.90, category: "donuts", img: null, badge: null },
+        { id: 3, name: "🍩 Donut Nutella Love", price: 16.90, category: "donuts", img: null, badge: "⭐ Novo" },
+        { id: 4, name: "🍩 Donut Coração Apaixonado", price: 18.90, category: "donuts", img: null, badge: "💖 Especial" },
+        { id: 5, name: "🍩 Mini Donuts (6 unid)", price: 29.90, category: "donuts", img: null, badge: "🎁 Combo" },
+        
+        // CUPCAKES 🧁
+        { id: 6, name: "🧁 Cupcake Arco-Íris Mágico", price: 14.50, category: "cupcakes", img:"imagens/arcoiris.jpg", badge: "🌈 Colorido" },
+        { id: 7, name: "🧁 Cupcake Nuvem Doce", price: 15.90, category: "cupcakes", img: null, badge: "☁️ Fofinho" },
+        { id: 8, name: "🧁 Cupcake Red Velvet", price: 17.90, category: "cupcakes", img: null, badge: "✨ Premium" },
+        { id: 9, name: "🧁 Cupcake Limão & Flor", price: 13.50, category: "cupcakes", img: null, badge: null },
+        { id: 10, name: "🧁 Cupcake Unicórnio Mágico", price: 22.90, category: "cupcakes", img: null, badge: "🦄 Favorito" },
+        
+        // ESPECIAIS ✨
+        { id: 11, name: "✨ Kit Casal Romântico", price: 49.90, category: "especiais", img: null, badge: "💕 Para presentear" },
+        { id: 12, name: "✨ Bolo no Pote Brigadeiro", price: 16.90, category: "especiais", img: null, badge: "🍫 Cremoso" },
+        { id: 13, name: "✨ Donut Royal (Ouro)", price: 29.90, category: "especiais", img: null, badge: "👑 Premium" },
+        { id: 14, name: "✨ Kit Festa Criança", price: 59.90, category: "especiais", img: null, badge: "🎉 12 peças" },
+        { id: 15, name: "✨ Donut Gigante Recheado", price: 39.90, category: "especiais", img: null, badge: "🍩 Família" }
+    ];
+    // ══════════════════════════════════════════════════════════
+
+    const bairros = [
+        { value: "centro", label: "Centro – Floriano", frete: 7.90, cidade: "Floriano" },
+        { value: "manguinha", label: "Manguinha – Floriano", frete: 7.90, cidade: "Floriano" },
+        { value: "irapua1", label: "Irapuã I – Floriano", frete: 7.90, cidade: "Floriano" },
+        { value: "irapua2", label: "Irapuã II – Floriano", frete: 7.90, cidade: "Floriano" },
+        { value: "bosque", label: "Bosque Santa Teresinha – Floriano", frete: 7.90, cidade: "Floriano" },
+        { value: "sao_cristovao", label: "São Cristóvão – Floriano", frete: 7.90, cidade: "Floriano" },
+        { value: "curador", label: "Curador – Floriano", frete: 7.90, cidade: "Floriano" },
+        { value: "caixa_dagua", label: "Caixa D'Água – Floriano", frete: 7.90, cidade: "Floriano" },
+        { value: "taboca", label: "Taboca – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "ibiapaba", label: "Ibiapaba – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "matadouro", label: "Matadouro – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "sambaiba_velha", label: "Sambaíba Velha – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "sambaiba_nova", label: "Sambaíba Nova – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "planalto_sambaiba", label: "Planalto Sambaíba – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "alto_da_cruz", label: "Alto da Cruz – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "jua", label: "Juá – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "riacho_fundo", label: "Riacho Fundo – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "vila_leao", label: "Vila Leão – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "cancela", label: "Cancela – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "bom_lugar", label: "Bom Lugar – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "canoas", label: "Canoas – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "catumbi", label: "Catumbí – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "tiberao", label: "Tiberão – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "pau_ferrado", label: "Pau Ferrado – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "via_azul", label: "Via Azul – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "princesa_sul", label: "Princesa do Sul – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "cajueiro", label: "Cajueiro I / II – Floriano", frete: 9.90, cidade: "Floriano" },
+        { value: "barao_centro", label: "Centro – Barão de Grajaú", frete: 12.90, cidade: "Barão de Grajaú" },
+        { value: "barao_bairros", label: "Demais bairros – Barão de Grajaú", frete: 12.90, cidade: "Barão de Grajaú" },
+    ];
+
+    const categoryLabels = { donuts: "Donut", cupcakes: "Cupcake", especiais: "Especial" };
+    const categoryEmojis = { donuts: "🍩", cupcakes: "🧁", especiais: "✨" };
+
+    let carrinho = [];
+    let freteAtual = 7.90;
+
+    function salvar() { try { localStorage.setItem("donut_cart_v2", JSON.stringify(carrinho)); } catch(e) {} atualizarBadge(); }
+    function carregar() { try { const d = localStorage.getItem("donut_cart_v2"); if (d) carrinho = JSON.parse(d); } catch(e) { carrinho = []; } atualizarBadge(); }
+    function atualizarBadge() { const total = carrinho.reduce((s, i) => s + i.qtd, 0); document.getElementById("cartCount").textContent = total; }
+
+    function addToCart(id) {
+        const prod = produtos.find(p => p.id === id);
+        const exist = carrinho.find(i => i.id === id);
+        if (exist) exist.qtd++;
+        else carrinho.push({ ...prod, qtd: 1 });
+        salvar(); renderCart(); toast(`🍩 ${prod.name} adicionado!`);
+    }
+
+    function changeQty(id, delta) {
+        const idx = carrinho.findIndex(i => i.id === id);
+        if (idx === -1) return;
+        carrinho[idx].qtd += delta;
+        if (carrinho[idx].qtd <= 0) carrinho.splice(idx, 1);
+        salvar(); renderCart();
+    }
+
+    function renderProducts(cat = "all") {
+        const grid = document.getElementById("productsGrid");
+        const list = cat === "all" ? produtos : produtos.filter(p => p.category === cat);
+        grid.innerHTML = list.map(p => `
+            <div class="product-card" data-id="${p.id}">
+                <div class="product-img-wrap">
+                    ${p.img ? `<img class="product-img" src="${p.img}" alt="${p.name}" loading="lazy">` : `<div class="product-placeholder">${categoryEmojis[p.category] || "🍬"}</div>`}
+                    ${p.badge ? `<span class="product-badge">${p.badge}</span>` : ""}
+                    <button class="product-fav" title="Favoritar">🤍</button>
+                </div>
+                <div class="product-info">
+                    <div class="product-category">${categoryLabels[p.category] || p.category}</div>
+                    <div class="product-title">${p.name}</div>
+                    <div class="product-footer">
+                        <div class="product-price"><small>a partir de</small> R$ ${p.price.toFixed(2).replace(".", ",")}</div>
+                        <button class="btn-add-cart" data-id="${p.id}" title="Adicionar ao carrinho">+</button>
+                    </div>
+                </div>
+            </div>
+        `).join("");
+        grid.querySelectorAll(".btn-add-cart").forEach(btn => btn.addEventListener("click", e => { e.stopPropagation(); addToCart(parseInt(btn.dataset.id)); }));
+        grid.querySelectorAll(".product-fav").forEach(btn => btn.addEventListener("click", e => { e.stopPropagation(); btn.textContent = btn.textContent === "🤍" ? "❤️" : "🤍"; }));
+    }
+
+    function renderCart() {
+        const body = document.getElementById("cartBody");
+        const summary = document.getElementById("cartSummary");
+        if (carrinho.length === 0) {
+            body.innerHTML = `<div class="cart-empty"><div class="cart-empty-icon">🛒</div><p>Seu carrinho está vazio.<br>Adicione alguns doces!</p></div>`;
+            summary.innerHTML = ""; return;
+        }
+        body.innerHTML = carrinho.map(item => `
+            <div class="cart-item">
+                <div class="cart-item-img">${item.name.split(" ")[0]}</div>
+                <div class="cart-item-info"><div class="cart-item-name">${item.name}</div><div class="cart-item-price">R$ ${(item.price * item.qtd).toFixed(2).replace(".", ",")}</div></div>
+                <div class="cart-item-controls"><button class="qty-btn" data-id="${item.id}" data-d="-1">−</button><span class="qty-num">${item.qtd}</span><button class="qty-btn" data-id="${item.id}" data-d="1">+</button></div>
+            </div>
+        `).join("");
+        body.querySelectorAll(".qty-btn").forEach(btn => btn.addEventListener("click", () => changeQty(parseInt(btn.dataset.id), parseInt(btn.dataset.d))));
+        const subtotal = carrinho.reduce((s, i) => s + i.price * i.qtd, 0);
+        const total = subtotal + freteAtual;
+        summary.innerHTML = `<div class="summary-row"><span>Subtotal</span><span>R$ ${subtotal.toFixed(2).replace(".", ",")}</span></div><div class="summary-row"><span>Frete</span><span>R$ ${freteAtual.toFixed(2).replace(".", ",")}</span></div><div class="summary-row total"><span>Total</span><span>R$ ${total.toFixed(2).replace(".", ",")}</span></div>`;
+    }
+
+    function openCart() { document.getElementById("cartSidebar").classList.add("open"); document.getElementById("overlay").classList.add("show"); }
+    function closeCart() { document.getElementById("cartSidebar").classList.remove("open"); document.getElementById("overlay").classList.remove("show"); }
+    function toast(msg) { const el = document.getElementById("toast"); el.textContent = msg; el.classList.add("show"); setTimeout(() => el.classList.remove("show"), 2500); }
+
+    function calcFrete() {
+        const val = document.getElementById("regiaoSelect").value;
+        const bairro = bairros.find(b => b.value === val);
+        freteAtual = bairro ? bairro.frete : 7.90;
+        const zona = freteAtual <= 7.90 ? "Zona A" : freteAtual <= 9.90 ? "Zona B" : "Zona C";
+        const res = document.getElementById("freteResult");
+        res.innerHTML = `Taxa de entrega (${zona}): <strong>R$ ${freteAtual.toFixed(2).replace(".", ",")}</strong><br><small style="font-weight:400; font-size:0.8rem; opacity:0.7">Prazo: 1 a 2 dias úteis • Terça a domingo</small>`;
+        res.classList.add("show"); renderCart(); toast("✨ Frete calculado!");
+    }
+
+    function initMap() {
+        const map = L.map("fofoMap").setView([-6.7663, -43.0241], 12);
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", { attribution: "© OpenStreetMap & CartoDB" }).addTo(map);
+        const icon = (emoji) => L.divIcon({ html: `<div style="font-size:22px">${emoji}</div>`, iconSize: [30,30], className:"" });
+        L.marker([-6.7663, -43.0241], { icon: icon("🍩") }).addTo(map).bindPopup("Donut ALR – Floriano").openPopup();
+        L.marker([-6.7568, -42.9985], { icon: icon("🧁") }).addTo(map).bindPopup("Barão de Grajaú – Entrega disponível");
+        L.circle([-6.7663, -43.0241], { radius: 5000, color: "#F5A3C7", fillColor: "#FFD9E8", fillOpacity: 0.2 }).addTo(map);
+    }
+
+    document.querySelectorAll(".filter-btn").forEach(btn => { btn.addEventListener("click", () => { document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active")); btn.classList.add("active"); renderProducts(btn.dataset.cat); }); });
+    document.querySelectorAll(".nav-links a[data-cat]").forEach(link => { link.addEventListener("click", e => { e.preventDefault(); const cat = link.dataset.cat; document.querySelector(`[data-cat="${cat}"].filter-btn`)?.click(); document.getElementById("cardapio").scrollIntoView({ behavior: "smooth" }); }); });
+
+    window.addEventListener("DOMContentLoaded", () => { carregar(); renderProducts("all"); renderCart(); initMap(); document.getElementById("cartBtn").addEventListener("click", openCart); document.getElementById("closeCartBtn").addEventListener("click", closeCart); document.getElementById("overlay").addEventListener("click", closeCart); document.getElementById("calcFreteBtn").addEventListener("click", calcFrete); document.getElementById("regiaoSelect").addEventListener("change", calcFrete); document.getElementById("checkoutBtn").addEventListener("click", () => { if (!carrinho.length) { toast("Adicione doces ao carrinho primeiro! 🍩"); return; } const total = (carrinho.reduce((s,i)=>s+i.price*i.qtd,0)+freteAtual).toFixed(2).replace(".",","); toast(`🎉 Pedido finalizado! Total: R$ ${total}. Em breve entraremos em contato! 💖`); carrinho = []; salvar(); renderCart(); closeCart(); }); calcFrete(); });
+</script>
+</body>
+</html>
